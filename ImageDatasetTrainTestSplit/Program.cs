@@ -10,13 +10,14 @@ namespace ImageDatasetTrainTestSplit
 {
     class Program
     {
-        private static Dictionary<string, List<string>> _classImageDictionary = new Dictionary<string, List<string>>();
-        private static List<string> _classesFriendlyName = new List<string>();
+        private static readonly Dictionary<string, List<string>> _classImageDictionary = new Dictionary<string, List<string>>();
+        private static readonly List<string> _classesFriendlyName = new List<string>();
         private static string[] _classesDirectory;
         private static string _trainingSetDirectory;
-        private static string _testSetDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "test_set");
-        private static string _validationSetDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "validation_set");
-        private static string _newTrainingSetDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "new_training_set");
+        private static readonly string _testSetDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "test_set");
+        private static readonly string _validationSetDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "validation_set");
+        private static readonly string _newTrainingSetDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "new_training_set");
+        private static bool _renameFiles = false;
 
         static void Main(string[] args)
         {
@@ -80,6 +81,23 @@ namespace ImageDatasetTrainTestSplit
             }
 
             Console.WriteLine($"\t{_classImageDictionary.Sum(x => x.Value.Count)} images in total");
+
+            Console.WriteLine("Rename files to be in format {class_name}.{index}.{file_extension}, eg. dangerous.1.jpg? (Y/N)");
+            validInput = false;
+            while (!validInput)
+            {
+                var key = Console.ReadKey();
+                Console.WriteLine();
+                if (key.Key == ConsoleKey.Y)
+                {
+                    validInput = true;
+                    _renameFiles = true;
+                }
+                else if (key.Key != ConsoleKey.N)
+                {
+                    Console.WriteLine("Invalid key");
+                }
+            }
 
             bool onlySplitToTest = false; //Determines if training set is split into test set or also cross validation set
             validInput = false;
@@ -150,18 +168,42 @@ namespace ImageDatasetTrainTestSplit
                 Console.WriteLine("Press any key to continue");
                 Console.ReadKey();
 
+                int[] fileNumbers = { 1, 1 };
+
                 foreach (string fileName in _classImageDictionary[className])
                 {
                     string fileFriendlyName = fileName.Substring(fileName.LastIndexOf("\\") + 1);
-                    if (testFileNames.Contains(fileName))
+                    string extension = fileFriendlyName.Substring(fileFriendlyName.LastIndexOf('.') + 1);
+
+                    if (_renameFiles)
                     {
-                        Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_testSetDirectory, className)}");
-                        File.Copy(fileName, Path.Combine(_testSetDirectory, className, fileFriendlyName), true);
+                        if (testFileNames.Contains(fileName))
+                        {
+                            string newFileName = $"{className}.{fileNumbers[0]++}.{extension}";
+                            string pathAndFileName = Path.Combine(_testSetDirectory, className, newFileName);
+                            Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_testSetDirectory, className)} as {newFileName}");
+                            File.Copy(fileName, pathAndFileName, true);
+                        }
+                        else
+                        {
+                            string newFileName = $"{className}.{fileNumbers[1]++}.{extension}";
+                            string pathAndFileName = Path.Combine(_newTrainingSetDirectory, className, newFileName);
+                            Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_newTrainingSetDirectory, className)} as {newFileName}");
+                            File.Copy(fileName, pathAndFileName, true);
+                        }
                     }
                     else
                     {
-                        Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_newTrainingSetDirectory, className)}");
-                        File.Copy(fileName, Path.Combine(_newTrainingSetDirectory, className, fileFriendlyName), true);
+                        if (testFileNames.Contains(fileName))
+                        {
+                            Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_testSetDirectory, className)}");
+                            File.Copy(fileName, Path.Combine(_testSetDirectory, className, fileFriendlyName), true);
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_newTrainingSetDirectory, className)}");
+                            File.Copy(fileName, Path.Combine(_newTrainingSetDirectory, className, fileFriendlyName), true);
+                        }
                     }
                 }
             }
@@ -228,7 +270,7 @@ namespace ImageDatasetTrainTestSplit
             {
                 int testFilesToTake = (int)Math.Round(((float)_classImageDictionary[className].Count) * testPercentage);
                 int validationFilesToTake = (int)Math.Round(((float)_classImageDictionary[className].Count) * validationPercentage);
-                int trainingFilesToTake = _classImageDictionary[className].Count - testFilesToTake;
+                int trainingFilesToTake = _classImageDictionary[className].Count - testFilesToTake - validationFilesToTake;
                 var testFileNames = _classImageDictionary[className].Take(testFilesToTake).ToList();
                 var validationFileNames = _classImageDictionary[className].Where((fn, index) =>
                     index >= testFilesToTake && index < testFilesToTake + validationFilesToTake).ToList();
@@ -238,23 +280,54 @@ namespace ImageDatasetTrainTestSplit
                 Console.WriteLine("Press any key to continue");
                 Console.ReadKey();
 
+                int[] fileNumbers = new int[3] { 1, 1, 1 };
+
                 foreach (string fileName in _classImageDictionary[className])
                 {
                     string fileFriendlyName = fileName.Substring(fileName.LastIndexOf("\\") + 1);
-                    if (testFileNames.Contains(fileName))
+                    string extension = fileFriendlyName.Substring(fileFriendlyName.LastIndexOf('.') + 1);
+
+                    if (_renameFiles)
                     {
-                        Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_testSetDirectory, className)}");
-                        File.Copy(fileName, Path.Combine(_testSetDirectory, className, fileFriendlyName), true);
-                    }
-                    else if (validationFileNames.Contains(fileName))
-                    {
-                        Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_validationSetDirectory, className)}");
-                        File.Copy(fileName, Path.Combine(_validationSetDirectory, className, fileFriendlyName), true);
+                        if (testFileNames.Contains(fileName))
+                        {
+                            string newFileName = $"{className}.{fileNumbers[0]++}.{extension}";
+                            string pathAndFileName = Path.Combine(_testSetDirectory, className, newFileName);
+                            Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_testSetDirectory, className)} as {newFileName}");
+                            File.Copy(fileName, pathAndFileName, true);
+                        }
+                        else if (validationFileNames.Contains(fileName))
+                        {
+                            string newFileName = $"{className}.{fileNumbers[1]++}.{extension}";
+                            string pathAndFileName = Path.Combine(_validationSetDirectory, className, newFileName);
+                            Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_validationSetDirectory, className)} as {newFileName}");
+                            File.Copy(fileName, pathAndFileName, true);
+                        }
+                        else
+                        {
+                            string newFileName = $"{className}.{fileNumbers[2]++}.{extension}";
+                            string pathAndFileName = Path.Combine(_newTrainingSetDirectory, className, newFileName);
+                            Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_newTrainingSetDirectory, className)} as {newFileName}");
+                            File.Copy(fileName, pathAndFileName, true);
+                        }
                     }
                     else
                     {
-                        Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_newTrainingSetDirectory, className)}");
-                        File.Copy(fileName, Path.Combine(_newTrainingSetDirectory, className, fileFriendlyName), true);
+                        if (testFileNames.Contains(fileName))
+                        {
+                            Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_testSetDirectory, className)}");
+                            File.Copy(fileName, Path.Combine(_testSetDirectory, className, fileFriendlyName), true);
+                        }
+                        else if (validationFileNames.Contains(fileName))
+                        {
+                            Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_validationSetDirectory, className)}");
+                            File.Copy(fileName, Path.Combine(_validationSetDirectory, className, fileFriendlyName), true);
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_newTrainingSetDirectory, className)}");
+                            File.Copy(fileName, Path.Combine(_newTrainingSetDirectory, className, fileFriendlyName), true);
+                        }
                     }
                 }
             }
