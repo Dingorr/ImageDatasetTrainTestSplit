@@ -67,7 +67,6 @@ namespace ImageDatasetTrainTestSplit
                 string friendlyName = classDir.Substring(classDir.LastIndexOf("\\") + 1);
                 string mergeName = friendlyName;
 
-                bool mergeIntoOtherClass = false;
                 if (friendlyName.Contains("__"))
                 {
                     var nameSplitted = friendlyName.Split("__");
@@ -174,7 +173,6 @@ namespace ImageDatasetTrainTestSplit
                 int testFilesToTake = (int) Math.Round(((float)_classImageDictionary[classNameMapping.Key].Count) * percentage);
                 int trainingFilesToTake = _classImageDictionary[classNameMapping.Key].Count - testFilesToTake;
                 var testFileNames = _classImageDictionary[classNameMapping.Key].Take(testFilesToTake).ToList();
-                var trainingFileNames = _classImageDictionary[classNameMapping.Key].TakeLast(trainingFilesToTake).ToList();
 
                 Console.WriteLine($"[{classNameMapping.Key}]: Taking {testFilesToTake} to test set, and {trainingFilesToTake} to training set out of {_classImageDictionary[classNameMapping.Key].Count}");
                 if (classNameMapping.Key != classNameMapping.Value)
