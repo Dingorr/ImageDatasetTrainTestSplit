@@ -168,6 +168,12 @@ namespace ImageDatasetTrainTestSplit
 
             EnsureFolderStructureIsCorrect(_testSetDirectory);
 
+            var fileNumbersPerClass = new Dictionary<string, int[]>();
+            foreach (var className in _classesFriendlyNameMapping.Values.Distinct())
+            {
+                fileNumbersPerClass.Add(className, new int[] { 1, 1 });
+            }
+
             foreach (var classNameMapping in _classesFriendlyNameMapping)
             {
                 int testFilesToTake = (int) Math.Round(((float)_classImageDictionary[classNameMapping.Key].Count) * percentage);
@@ -180,7 +186,7 @@ namespace ImageDatasetTrainTestSplit
                 Console.WriteLine("Press any key to continue");
                 Console.ReadKey();
 
-                int[] fileNumbers = { 1, 1 };
+                int[] fileNumbers = fileNumbersPerClass[classNameMapping.Value];
 
                 foreach (string fileName in _classImageDictionary[classNameMapping.Key])
                 {
@@ -278,6 +284,12 @@ namespace ImageDatasetTrainTestSplit
             EnsureFolderStructureIsCorrect(_testSetDirectory);
             EnsureFolderStructureIsCorrect(_validationSetDirectory);
 
+            var fileNumbersPerClass = new Dictionary<string, int[]>();
+            foreach (var className in _classesFriendlyNameMapping.Values.Distinct())
+            {
+                fileNumbersPerClass.Add(className, new int[3] { 1, 1, 1 });
+            }
+
             foreach (var classNameMapping in _classesFriendlyNameMapping)
             {
                 int testFilesToTake = (int)Math.Round(((float)_classImageDictionary[classNameMapping.Key].Count) * testPercentage);
@@ -295,7 +307,7 @@ namespace ImageDatasetTrainTestSplit
                 Console.WriteLine("Press any key to continue");
                 Console.ReadKey();
 
-                int[] fileNumbers = new int[3] { 1, 1, 1 };
+                int[] fileNumbers = fileNumbersPerClass[classNameMapping.Value];
 
                 foreach (string fileName in _classImageDictionary[classNameMapping.Key])
                 {
