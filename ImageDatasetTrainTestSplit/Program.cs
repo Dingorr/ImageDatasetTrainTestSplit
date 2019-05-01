@@ -18,6 +18,7 @@ namespace ImageDatasetTrainTestSplit
         private static readonly string _validationSetDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "validation_set");
         private static readonly string _newTrainingSetDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "training_set");
         private static bool _renameFiles = false;
+        private static bool _squareImages = false;
 
         static void Main(string[] args)
         {
@@ -77,7 +78,8 @@ namespace ImageDatasetTrainTestSplit
                 _classesFriendlyName.Add(friendlyName);
                 _classesFriendlyNameMapping.Add(friendlyName, mergeName);
                 _classImageDictionary.Add(friendlyName, new List<string>());
-                foreach (string fileName in Directory.GetFiles(classDir))
+                var directoryInfo = new DirectoryInfo(classDir);
+                foreach (string fileName in directoryInfo.GetFilesFilters(new [] { "*.png", "*.jpg", "*.jpeg" }).Select(x => x.FullName))
                 {
                     _classImageDictionary[friendlyName].Add(fileName);
                 }
@@ -103,6 +105,23 @@ namespace ImageDatasetTrainTestSplit
                 {
                     validInput = true;
                     _renameFiles = true;
+                }
+                else if (key.Key != ConsoleKey.N)
+                {
+                    Console.WriteLine("Invalid key");
+                }
+            }
+
+            Console.WriteLine("Square images (adding black background as padding)? (Y/N)");
+            validInput = false;
+            while (!validInput)
+            {
+                var key = Console.ReadKey();
+                Console.WriteLine();
+                if (key.Key == ConsoleKey.Y)
+                {
+                    validInput = true;
+                    _squareImages = true;
                 }
                 else if (key.Key != ConsoleKey.N)
                 {
@@ -183,8 +202,6 @@ namespace ImageDatasetTrainTestSplit
                 Console.WriteLine($"[{classNameMapping.Key}]: Taking {testFilesToTake} to test set, and {trainingFilesToTake} to training set out of {_classImageDictionary[classNameMapping.Key].Count}");
                 if (classNameMapping.Key != classNameMapping.Value)
                     Console.WriteLine($"[{classNameMapping.Key}]: Merging class into {classNameMapping.Value} in final dataset.");
-                Console.WriteLine("Press any key to continue");
-                Console.ReadKey();
 
                 int[] fileNumbers = fileNumbersPerClass[classNameMapping.Value];
 
@@ -199,28 +216,78 @@ namespace ImageDatasetTrainTestSplit
                         {
                             string newFileName = $"{classNameMapping.Value}.{fileNumbers[0]++}.{extension}";
                             string pathAndFileName = Path.Combine(_testSetDirectory, classNameMapping.Value, newFileName);
-                            Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_testSetDirectory, classNameMapping.Value)} as {newFileName}");
-                            File.Copy(fileName, pathAndFileName, true);
+
+                            if (_squareImages)
+                            {
+                                using (var fileSquarer = new ImageSquarer(fileName))
+                                {
+                                    Console.WriteLine($"Squaring file {fileFriendlyName} and saving to {Path.Combine(_testSetDirectory, classNameMapping.Value)} as {newFileName}");
+                                    fileSquarer.GetSquareImage();
+                                    fileSquarer.SaveToFile(pathAndFileName);
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_testSetDirectory, classNameMapping.Value)} as {newFileName}");
+                                File.Copy(fileName, pathAndFileName, true);
+                            }
                         }
                         else
                         {
                             string newFileName = $"{classNameMapping.Value}.{fileNumbers[1]++}.{extension}";
                             string pathAndFileName = Path.Combine(_newTrainingSetDirectory, classNameMapping.Value, newFileName);
-                            Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_newTrainingSetDirectory, classNameMapping.Value)} as {newFileName}");
-                            File.Copy(fileName, pathAndFileName, true);
+
+                            if (_squareImages)
+                            {
+                                using (var fileSquarer = new ImageSquarer(fileName))
+                                {
+                                    Console.WriteLine($"Squaring file {fileFriendlyName} and saving to {Path.Combine(_newTrainingSetDirectory, classNameMapping.Value)} as {newFileName}");
+                                    fileSquarer.GetSquareImage();
+                                    fileSquarer.SaveToFile(pathAndFileName);
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_newTrainingSetDirectory, classNameMapping.Value)} as {newFileName}");
+                                File.Copy(fileName, pathAndFileName, true);
+                            }
                         }
                     }
                     else
                     {
                         if (testFileNames.Contains(fileName))
                         {
-                            Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_testSetDirectory, classNameMapping.Value)}");
-                            File.Copy(fileName, Path.Combine(_testSetDirectory, classNameMapping.Value, fileFriendlyName), true);
+                            if (_squareImages)
+                            {
+                                using (var fileSquarer = new ImageSquarer(fileName))
+                                {
+                                    Console.WriteLine($"Squaring file {fileFriendlyName} and saving to {Path.Combine(_testSetDirectory, classNameMapping.Value)}");
+                                    fileSquarer.GetSquareImage();
+                                    fileSquarer.SaveToFile(Path.Combine(_testSetDirectory, classNameMapping.Value, fileFriendlyName));
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_testSetDirectory, classNameMapping.Value)}");
+                                File.Copy(fileName, Path.Combine(_testSetDirectory, classNameMapping.Value, fileFriendlyName), true);
+                            }
                         }
                         else
                         {
-                            Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_newTrainingSetDirectory, classNameMapping.Value)}");
-                            File.Copy(fileName, Path.Combine(_newTrainingSetDirectory, classNameMapping.Value, fileFriendlyName), true);
+                            if (_squareImages)
+                            {
+                                using (var fileSquarer = new ImageSquarer(fileName))
+                                {
+                                    Console.WriteLine($"Squaring file {fileFriendlyName} and saving to {Path.Combine(_newTrainingSetDirectory, classNameMapping.Value)}");
+                                    fileSquarer.GetSquareImage();
+                                    fileSquarer.SaveToFile(Path.Combine(_newTrainingSetDirectory, classNameMapping.Value, fileFriendlyName));
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_newTrainingSetDirectory, classNameMapping.Value)}");
+                                File.Copy(fileName, Path.Combine(_newTrainingSetDirectory, classNameMapping.Value, fileFriendlyName), true);
+                            }
                         }
                     }
                 }
@@ -304,9 +371,6 @@ namespace ImageDatasetTrainTestSplit
                 if (classNameMapping.Key != classNameMapping.Value)
                     Console.WriteLine($"[{classNameMapping.Key}]: Merging class into {classNameMapping.Value} in final dataset.");
 
-                Console.WriteLine("Press any key to continue");
-                Console.ReadKey();
-
                 int[] fileNumbers = fileNumbersPerClass[classNameMapping.Value];
 
                 foreach (string fileName in _classImageDictionary[classNameMapping.Key])
@@ -320,40 +384,115 @@ namespace ImageDatasetTrainTestSplit
                         {
                             string newFileName = $"{classNameMapping.Value}.{fileNumbers[0]++}.{extension}";
                             string pathAndFileName = Path.Combine(_testSetDirectory, classNameMapping.Value, newFileName);
-                            Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_testSetDirectory, classNameMapping.Value)} as {newFileName}");
-                            File.Copy(fileName, pathAndFileName, true);
+
+                            if (_squareImages)
+                            {
+                                using (var fileSquarer = new ImageSquarer(fileName))
+                                {
+                                    Console.WriteLine($"Squaring file {fileFriendlyName} and saving to {Path.Combine(_testSetDirectory, classNameMapping.Value)} as {newFileName}");
+                                    fileSquarer.GetSquareImage();
+                                    fileSquarer.SaveToFile(pathAndFileName);
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_testSetDirectory, classNameMapping.Value)} as {newFileName}");
+                                File.Copy(fileName, pathAndFileName, true);
+                            }
                         }
                         else if (validationFileNames.Contains(fileName))
                         {
                             string newFileName = $"{classNameMapping.Value}.{fileNumbers[1]++}.{extension}";
                             string pathAndFileName = Path.Combine(_validationSetDirectory, classNameMapping.Value, newFileName);
-                            Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_validationSetDirectory, classNameMapping.Value)} as {newFileName}");
-                            File.Copy(fileName, pathAndFileName, true);
+
+                            if (_squareImages)
+                            {
+                                using (var fileSquarer = new ImageSquarer(fileName))
+                                {
+                                    Console.WriteLine($"Squaring file {fileFriendlyName} and saving to {Path.Combine(_validationSetDirectory, classNameMapping.Value)} as {newFileName}");
+                                    fileSquarer.GetSquareImage();
+                                    fileSquarer.SaveToFile(pathAndFileName);
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_validationSetDirectory, classNameMapping.Value)} as {newFileName}");
+                                File.Copy(fileName, pathAndFileName, true);
+                            }
                         }
                         else
                         {
                             string newFileName = $"{classNameMapping.Value}.{fileNumbers[2]++}.{extension}";
                             string pathAndFileName = Path.Combine(_newTrainingSetDirectory, classNameMapping.Value, newFileName);
-                            Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_newTrainingSetDirectory, classNameMapping.Value)} as {newFileName}");
-                            File.Copy(fileName, pathAndFileName, true);
+
+                            if (_squareImages)
+                            {
+                                using (var fileSquarer = new ImageSquarer(fileName))
+                                {
+                                    Console.WriteLine($"Squaring file {fileFriendlyName} and saving to {Path.Combine(_newTrainingSetDirectory, classNameMapping.Value)} as {newFileName}");
+                                    fileSquarer.GetSquareImage();
+                                    fileSquarer.SaveToFile(pathAndFileName);
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_newTrainingSetDirectory, classNameMapping.Value)} as {newFileName}");
+                                File.Copy(fileName, pathAndFileName, true);
+                            }
                         }
                     }
                     else
                     {
                         if (testFileNames.Contains(fileName))
                         {
-                            Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_testSetDirectory, classNameMapping.Value)}");
-                            File.Copy(fileName, Path.Combine(_testSetDirectory, classNameMapping.Value, fileFriendlyName), true);
+                            if (_squareImages)
+                            {
+                                using (var fileSquarer = new ImageSquarer(fileName))
+                                {
+                                    Console.WriteLine($"Squaring file {fileFriendlyName} and saving to {Path.Combine(_newTrainingSetDirectory, classNameMapping.Value)}");
+                                    fileSquarer.GetSquareImage();
+                                    fileSquarer.SaveToFile(Path.Combine(_testSetDirectory, classNameMapping.Value, fileFriendlyName));
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_testSetDirectory, classNameMapping.Value)}");
+                                File.Copy(fileName, Path.Combine(_testSetDirectory, classNameMapping.Value, fileFriendlyName), true);
+                            }
                         }
                         else if (validationFileNames.Contains(fileName))
                         {
-                            Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_validationSetDirectory, classNameMapping.Value)}");
-                            File.Copy(fileName, Path.Combine(_validationSetDirectory, classNameMapping.Value, fileFriendlyName), true);
+                            if (_squareImages)
+                            {
+                                using (var fileSquarer = new ImageSquarer(fileName))
+                                {
+                                    Console.WriteLine($"Squaring file {fileFriendlyName} and saving to {Path.Combine(_validationSetDirectory, classNameMapping.Value)}");
+                                    fileSquarer.GetSquareImage();
+                                    fileSquarer.SaveToFile(Path.Combine(_testSetDirectory, classNameMapping.Value, fileFriendlyName));
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_validationSetDirectory, classNameMapping.Value)}");
+                                File.Copy(fileName, Path.Combine(_validationSetDirectory, classNameMapping.Value, fileFriendlyName), true);
+                            }
                         }
                         else
                         {
-                            Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_newTrainingSetDirectory, classNameMapping.Value)}");
-                            File.Copy(fileName, Path.Combine(_newTrainingSetDirectory, classNameMapping.Value, fileFriendlyName), true);
+                            if (_squareImages)
+                            {
+                                using (var fileSquarer = new ImageSquarer(fileName))
+                                {
+                                    Console.WriteLine($"Squaring file {fileFriendlyName} and saving to {Path.Combine(_newTrainingSetDirectory, classNameMapping.Value)}");
+                                    fileSquarer.GetSquareImage();
+                                    fileSquarer.SaveToFile(Path.Combine(_testSetDirectory, classNameMapping.Value, fileFriendlyName));
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Copying file {fileFriendlyName} to {Path.Combine(_newTrainingSetDirectory, classNameMapping.Value)}");
+                                File.Copy(fileName, Path.Combine(_newTrainingSetDirectory, classNameMapping.Value, fileFriendlyName), true);
+                            }
                         }
                     }
                 }
