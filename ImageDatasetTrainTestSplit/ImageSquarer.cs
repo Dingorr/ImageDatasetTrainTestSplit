@@ -29,7 +29,7 @@ namespace ImageDatasetTrainTestSplit
             }
         }
 
-        public void GetSquareImage()
+        public void GetSquareImage(bool cropInsteadOfSquare = false)
         {
             if (_originalImage.Width == _originalImage.Height)
             {
@@ -56,15 +56,35 @@ namespace ImageDatasetTrainTestSplit
 
             if (_heightIsBiggestDimension)
             {
-                int difference = _originalImage.Height - _originalImage.Width;
-                int padding = (int)Math.Floor((double)difference / 2.0);
-                graphics.DrawImage(_originalImage, new Point(padding, 0));
+                if (cropInsteadOfSquare)
+                {
+                    int difference = _originalImage.Height - _originalImage.Width;
+                    int padding = (int)Math.Floor((double)difference / 2.0);
+                    var cropRect = new Rectangle(padding, 0, orignalBitmap.Width, orignalBitmap.Width);
+                    graphics.DrawImage(_originalImage, new Rectangle(0, 0, newImage.Width, newImage.Height), cropRect, GraphicsUnit.Pixel);
+                }
+                else
+                {
+                    int difference = _originalImage.Height - _originalImage.Width;
+                    int padding = (int)Math.Floor((double)difference / 2.0);
+                    graphics.DrawImage(_originalImage, new Point(padding, 0));
+                }
             }
             else
             {
-                int difference = _originalImage.Width - _originalImage.Height;
-                int padding = (int)Math.Floor((double)difference / 2.0);
-                graphics.DrawImage(_originalImage, new Point(0, padding));
+                if (cropInsteadOfSquare)
+                {
+                    int difference = _originalImage.Width - _originalImage.Height;
+                    int padding = (int)Math.Floor((double)difference / 2.0);
+                    var cropRect = new Rectangle(padding, 0, _originalImage.Height, _originalImage.Height);
+                    graphics.DrawImage(_originalImage, new Rectangle(0, 0, newImage.Width, newImage.Height), cropRect, GraphicsUnit.Pixel);
+                }
+                else
+                {
+                    int difference = _originalImage.Width - _originalImage.Height;
+                    int padding = (int)Math.Floor((double)difference / 2.0);
+                    graphics.DrawImage(_originalImage, new Point(0, padding));
+                }
             }
 
             _squareImage = newImage;
