@@ -124,7 +124,11 @@ namespace ImageDatasetTrainTestSplit
                     validInput = true;
                     _renameFiles = true;
                 }
-                else if (key.Key != ConsoleKey.N)
+                else if (key.Key == ConsoleKey.N)
+                {
+                    validInput = true;
+                }
+                else
                 {
                     Console.WriteLine("Invalid key");
                 }
@@ -142,7 +146,11 @@ namespace ImageDatasetTrainTestSplit
                     validInput = true;
                     _squareImages = true;
                 }
-                else if (key.Key != ConsoleKey.N)
+                else if (key.Key == ConsoleKey.N)
+                {
+                    validInput = true;
+                }
+                else
                 {
                     Console.WriteLine("Invalid key");
                 }
